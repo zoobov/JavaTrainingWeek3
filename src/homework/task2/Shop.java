@@ -16,22 +16,30 @@ public class Shop implements Runnable {
 
     @Override
     public void run() {
-        System.out.println(thread.getName() + " is opened...");
-        for (int i = 0; i < 10; i++) {
-            try {
+        System.out.printf(thread.getName() + " is opened... (takes %d apples and pause %d)\n",getAmount,sleepTime);
+        try {
+            for (int i = 0; i < 10; i++) {
                 getApple();
                 thread.sleep(sleepTime);
-            } catch (InterruptedException e) {
-                System.out.println(thread.getName() + " is closed. Total sold apples " + totalAmount);
-                return;
             }
+            System.err.println(thread.getName() + " is closed. Total sold apples " + totalAmount);
+            AppleStore.stop=true;
+        } catch (InterruptedException e) {
+            System.err.println(thread.getName() + " was closed for selling small amount. Total sold apples " + totalAmount);
+            return;
         }
-        System.out.println(thread.getName() + " is closed. Total sold apples " + totalAmount);
     }
 
+
+
     private void getApple(){
-        totalAmount += getAmount;
-        Main.appleStore.getApples(getAmount);
+        if (Main.appleStore.getApples(getAmount))
+            totalAmount += getAmount;
+
+    }
+
+    public Thread getThread(){
+        return thread;
     }
 }
 

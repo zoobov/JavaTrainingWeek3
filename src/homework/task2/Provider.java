@@ -21,23 +21,29 @@ public class Provider implements Runnable{
     @Override
     public void run() {
         System.out.println(thread.getName() + " is opened...");
-        for (int i = 0; i < 20; i++) {
-            try {
+        try {
+            for (int i = 0; i < 40; i++) {
                 supplyApple();
                 thread.sleep(sleepTime);
-            } catch (InterruptedException e) {
-
-                return;
             }
+            System.err.println(thread.getName() + " is closed.");
+        } catch (InterruptedException e) {
+            System.err.println(thread.getName() + " was closed coz all shops was closed. ");
+            return;
         }
-
-        System.out.println(thread.getName() + " is closed.");
     }
+
+
+
 
     private void supplyApple(){
         String name = appleNames[random.nextInt(2)];
         int amount =random.nextInt(4)+1;
         totalAmount +=amount;
         Main.appleStore.putApples(name,amount);
+    }
+
+    public Thread getThread(){
+        return thread;
     }
 }

@@ -1,4 +1,5 @@
 package homework.task2;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
@@ -6,38 +7,65 @@ import java.util.Set;
 public class AppleStore {
     HashMap<String,Integer> apples;
     private boolean isBusy;
+    int totalAmount;
+    static boolean stop = false;
 
     AppleStore(){
         apples = new HashMap<String, Integer>();
         isBusy = false;
+        totalAmount=0;
         System.out.println("Apple store is opened");
    }
 
-   public synchronized void putApples(String name, int amount){
+
+    private int getTotAmount(){
+        int total=0;
+        Collection<Integer> values = apples.values();
+        Iterator<Integer> iterator = values.iterator();
+        while(iterator.hasNext()){
+            total+=iterator.next();
+        }
+        //System.out.println("getTotAmount()=" + total);
+        return total;
+    }
+
+    public synchronized void putApples(String name, int amount){
        int tmpValue=0;
        while (isBusy) {
            try {
                System.out.println(Thread.currentThread().getName() + " is waiting to supply new apples");
                wait();
-           } catch (InterruptedException e) {}
+           } catch (InterruptedException e) {
+               return;
+           }
+           return;
        }
+
        isBusy=true;
        if (apples.containsKey(name))
            tmpValue = apples.get(name);
        apples.put(name,(amount + tmpValue));
+       totalAmount = getTotAmount();
+       System.out.printf("+++ " + Thread.currentThread().getName() + " added %d %s apples to store, Total:%d\n",amount,name,totalAmount);
        isBusy=false;
        notifyAll();
-       System.out.printf("+++ " + Thread.currentThread().getName() + " added %d %s apples to store\n",amount,name);
    }
 
-   public synchronized void getApples(int amount){
-       int tmpValue, v;
-       String k = null;
-       while (isBusy && apples.isEmpty()) {
+    public synchronized boolean getApples(int amount){
+       int v,getTotal;
+       String k;
+       getTotal = amount;
+       while (isBusy || (amount > totalAmount)) {
            try {
                System.out.println(Thread.currentThread().getName() + " is waiting to get apples");
                wait();
+               //System.out.println(Thread.currentThread().getName() + " awaken from sleep");
            } catch (InterruptedException e) {
+               return false;
+           }
+           if (stop) {
+               Thread.currentThread().interrupt();
+               return false;
            }
        }
        isBusy=true;
@@ -48,16 +76,19 @@ public class AppleStore {
            v=apples.get(k);
            if (amount >= v) {
                 amount -= v;
-                apples.remove(k);
-                 break;
+                apples.put(k,0);
             }else{
                  v-=amount;
-                apples.put(k,v);
+                 apples.put(k,v);
             }
        }
+       totalAmount = getTotAmount();
+       System.out.printf("--- " + Thread.currentThread().getName() + " has got %d apples from store, Total apples on store:%d\n",getTotal,totalAmount);
        isBusy=false;
        notifyAll();
-       System.out.printf("--- " + Thread.currentThread().getName() + " has taken %d apples from store.\n ",amount);
-
+       return true;
    }
+
+
+
 }
